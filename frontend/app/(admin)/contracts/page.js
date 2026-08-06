@@ -6,34 +6,43 @@ import { useEffect, useState } from "react";
 export default function ContractsPage() {
 
 
-    const [contracts, setContracts] = useState([]);
-
-    const [rooms, setRooms] = useState([]);
-
-    const [tenants, setTenants] = useState([]);
+    const API = "https://localhost:7218/api/Contracts";
 
 
-    const [showForm, setShowForm] = useState(false);
+    const [contracts,setContracts] = useState([]);
+
+    const [rooms,setRooms] = useState([]);
+
+    const [tenants,setTenants] = useState([]);
 
 
-    // lưu ID hợp đồng đang sửa
-    const [editID, setEditID] = useState(null);
+    const [showForm,setShowForm] = useState(false);
+
+
+    const [editID,setEditID] = useState(null);
 
 
 
-    const [contract, setContract] = useState({
+    const emptyContract = {
 
-        roomID: "",
+        roomID:"",
 
-        tenantID: "",
+        tenantID:"",
 
-        startDate: "",
+        startDate:"",
 
-        endDate: "",
+        endDate:"",
 
-        deposit: ""
+        deposit:""
 
-    });
+    };
+
+
+
+    const [contract,setContract] = useState(emptyContract);
+
+
+
 
 
 
@@ -42,13 +51,9 @@ export default function ContractsPage() {
 
     const getContracts = async()=>{
 
-        const response = await fetch(
-            "https://localhost:7218/api/Contracts"
-        );
-
+        const response = await fetch(API);
 
         const data = await response.json();
-
 
         setContracts(data);
 
@@ -60,8 +65,9 @@ export default function ContractsPage() {
 
 
 
-    const getRooms = async()=>{
 
+
+    const getRooms = async()=>{
 
         const response = await fetch(
 
@@ -69,12 +75,9 @@ export default function ContractsPage() {
 
         );
 
-
         const data = await response.json();
 
-
         setRooms(data);
-
 
     };
 
@@ -88,21 +91,18 @@ export default function ContractsPage() {
 
     const getTenants = async()=>{
 
-
         const response = await fetch(
 
             "https://localhost:7218/api/Tenants"
 
         );
 
-
         const data = await response.json();
-
 
         setTenants(data);
 
-
     };
+
 
 
 
@@ -131,16 +131,35 @@ export default function ContractsPage() {
 
 
 
-    const handleChange = (e)=>{
+    const handleChange=(e)=>{
 
 
         setContract({
 
             ...contract,
 
-            [e.target.name]: e.target.value
+            [e.target.name]:e.target.value
 
         });
+
+
+    };
+
+
+
+
+
+
+
+
+
+    const resetForm=()=>{
+
+
+        setContract(emptyContract);
+
+
+        setEditID(null);
 
 
     };
@@ -157,11 +176,13 @@ export default function ContractsPage() {
 
 
         if(
-            contract.roomID === "" ||
-            contract.tenantID === ""
+            contract.roomID==="" ||
+            contract.tenantID===""
         ){
 
-            alert("Vui lòng chọn phòng và người thuê");
+            alert(
+                "Vui lòng chọn phòng và người thuê"
+            );
 
             return;
 
@@ -173,8 +194,7 @@ export default function ContractsPage() {
 
 
 
-
-        const data = {
+        const data={
 
 
             roomID:Number(contract.roomID),
@@ -183,14 +203,19 @@ export default function ContractsPage() {
             tenantID:Number(contract.tenantID),
 
 
-            startDate:contract.startDate,
+            startDate:
+
+                contract.startDate || null,
 
 
-            endDate:contract.endDate,
+            endDate:
+
+                contract.endDate || null,
 
 
-            deposit:Number(contract.deposit)
+            deposit:
 
+                Number(contract.deposit) || 0
 
 
         };
@@ -202,45 +227,69 @@ export default function ContractsPage() {
 
 
 
-        const url = editID
-
-        ? `https://localhost:7218/api/Contracts/${editID}`
-
-        : "https://localhost:7218/api/Contracts";
-
-
-
-
-
-        const method = editID ? "PUT" : "POST";
-
-
-
-
-
-
-
         const response = await fetch(
 
-            url,
+            editID
+
+            ?
+
+            `${API}/${editID}`
+
+            :
+
+            API,
 
             {
 
-                method:method,
+
+                method:
+
+                    editID
+
+                    ?
+
+                    "PUT"
+
+                    :
+
+                    "POST",
+
 
                 headers:{
 
-                    "Content-Type":"application/json"
+
+                    "Content-Type":
+
+                    "application/json"
+
 
                 },
 
 
-                body:JSON.stringify(data)
+                body:JSON.stringify(
+
+                    editID
+
+                    ?
+
+                    {
+
+                        contractID:editID,
+
+                        ...data
+
+                    }
+
+                    :
+
+                    data
+
+                )
+
 
             }
 
         );
-
 
 
 
@@ -256,37 +305,22 @@ export default function ContractsPage() {
 
                 editID
 
-                ? "Cập nhật hợp đồng thành công"
+                ?
 
-                : "Thêm hợp đồng thành công"
+                "Cập nhật hợp đồng thành công"
+
+                :
+
+                "Thêm hợp đồng thành công"
 
             );
 
 
 
-
-            setContract({
-
-                roomID:"",
-
-                tenantID:"",
-
-                startDate:"",
-
-                endDate:"",
-
-                deposit:""
-
-            });
-
-
-
-
-            setEditID(null);
+            resetForm();
 
 
             setShowForm(false);
-
 
 
             getContracts();
@@ -297,17 +331,19 @@ export default function ContractsPage() {
         else{
 
 
-            const error = await response.text();
+            const error = await response.json();
 
 
-            console.log(error);
+            alert(
 
+                error.message ||
 
-            alert("Có lỗi xảy ra");
+                "Có lỗi xảy ra"
+
+            );
 
 
         }
-
 
 
     };
@@ -320,23 +356,46 @@ export default function ContractsPage() {
 
 
 
-
-
-
-    const editContract = (item)=>{
+    const editContract=(item)=>{
 
 
         setContract({
 
+
             roomID:item.roomID,
+
 
             tenantID:item.tenantID,
 
-            startDate:item.startDate?.substring(0,10),
 
-            endDate:item.endDate?.substring(0,10),
+            startDate:
 
-            deposit:item.deposit
+                item.startDate
+
+                ?
+
+                item.startDate.substring(0,10)
+
+                :
+
+                "",
+
+
+            endDate:
+
+                item.endDate
+
+                ?
+
+                item.endDate.substring(0,10)
+
+                :
+
+                "",
+
+
+            deposit:item.deposit ?? ""
+
 
         });
 
@@ -358,21 +417,24 @@ export default function ContractsPage() {
 
 
 
-    const deleteContract = async(id)=>{
+    const deleteContract=async(id)=>{
 
 
-        if(!confirm("Bạn có chắc muốn xóa?"))
+        if(!confirm(
 
-            return;
+            "Bạn có chắc muốn xóa hợp đồng?"
+
+        ))
+
+        return;
 
 
 
 
 
+        const response = await fetch(
 
-        await fetch(
-
-            `https://localhost:7218/api/Contracts/${id}`,
+            `${API}/${id}`,
 
             {
 
@@ -384,15 +446,38 @@ export default function ContractsPage() {
 
 
 
-        getContracts();
+
+
+        if(response.ok){
+
+
+            alert(
+
+                "Xóa hợp đồng thành công"
+
+            );
+
+
+            getContracts();
+
+
+        }
 
 
     };
-    return (
+
+
+
+
+
+
+
+
+
+    return(
 
 
         <div>
-
 
 
             <div className="flex justify-between items-center">
@@ -414,14 +499,10 @@ export default function ContractsPage() {
                 onClick={()=>{
 
 
-                    setShowForm(!showForm);
+                    resetForm();
 
 
-                    if(showForm){
-
-                        setEditID(null);
-
-                    }
+                    setShowForm(true);
 
 
                 }}
@@ -434,7 +515,6 @@ export default function ContractsPage() {
 
 
                 </button>
-
 
 
             </div>
@@ -454,11 +534,22 @@ export default function ContractsPage() {
                 <div className="mt-5 border p-5 rounded">
 
 
-
                     <h2 className="text-xl font-bold mb-4">
 
 
-                        {editID ? "Sửa hợp đồng" : "Thêm hợp đồng"}
+                        {
+
+                            editID
+
+                            ?
+
+                            "Sửa hợp đồng"
+
+                            :
+
+                            "Thêm hợp đồng"
+
+                        }
 
 
                     </h2>
@@ -470,24 +561,22 @@ export default function ContractsPage() {
 
 
 
-
-
                     <select
-
 
                     name="roomID"
 
-
                     value={contract.roomID}
 
-
                     onChange={handleChange}
-
 
                     className="border p-2 block mb-3 w-full">
 
 
-                        <option value="">-- Chọn phòng --</option>
+                        <option value="">
+
+                            -- Chọn phòng --
+
+                        </option>
 
 
 
@@ -503,7 +592,11 @@ export default function ContractsPage() {
                                 value={room.roomID}>
 
 
-                                    {room.roomCode} - {room.roomName}
+                                    {room.roomCode}
+
+                                    -
+
+                                    {room.roomName}
 
 
                                 </option>
@@ -526,20 +619,20 @@ export default function ContractsPage() {
 
                     <select
 
-
                     name="tenantID"
-
 
                     value={contract.tenantID}
 
-
                     onChange={handleChange}
-
 
                     className="border p-2 block mb-3 w-full">
 
 
-                        <option value="">-- Chọn người thuê --</option>
+                        <option value="">
+
+                            -- Chọn người thuê --
+
+                        </option>
 
 
 
@@ -567,7 +660,6 @@ export default function ContractsPage() {
                         }
 
 
-
                     </select>
 
 
@@ -580,21 +672,15 @@ export default function ContractsPage() {
 
                     <input
 
-
                     type="date"
-
 
                     name="startDate"
 
-
                     value={contract.startDate}
-
 
                     onChange={handleChange}
 
-
                     className="border p-2 block mb-3 w-full"
-
 
                     />
 
@@ -605,24 +691,17 @@ export default function ContractsPage() {
 
 
 
-
                     <input
-
 
                     type="date"
 
-
                     name="endDate"
-
 
                     value={contract.endDate}
 
-
                     onChange={handleChange}
 
-
                     className="border p-2 block mb-3 w-full"
-
 
                     />
 
@@ -636,21 +715,15 @@ export default function ContractsPage() {
 
                     <input
 
-
                     name="deposit"
-
 
                     value={contract.deposit}
 
-
                     onChange={handleChange}
-
 
                     placeholder="Tiền cọc"
 
-
                     className="border p-2 block mb-3 w-full"
-
 
                     />
 
@@ -662,26 +735,65 @@ export default function ContractsPage() {
 
 
 
-                    <button
+                    <div className="flex gap-3">
 
 
-                    onClick={saveContract}
+                        <button
+
+                        onClick={saveContract}
+
+                        className="bg-green-600 text-white px-4 py-2 rounded">
 
 
-                    className="bg-green-600 text-white px-4 py-2 rounded">
+                            {
+
+                            editID
+
+                            ?
+
+                            "Cập nhật hợp đồng"
+
+                            :
+
+                            "Lưu hợp đồng"
+
+                            }
 
 
-                        {editID ? "Cập nhật hợp đồng" : "Lưu hợp đồng"}
+                        </button>
 
 
-                    </button>
 
 
+
+
+
+                        <button
+
+                        onClick={()=>{
+
+
+                            resetForm();
+
+                            setShowForm(false);
+
+
+                        }}
+
+                        className="bg-gray-500 text-white px-4 py-2 rounded">
+
+
+                            Hủy
+
+
+                        </button>
+
+
+                    </div>
 
 
 
                 </div>
-
 
             }
 
@@ -696,7 +808,6 @@ export default function ContractsPage() {
             <div className="mt-6">
 
 
-
                 <table className="w-full border">
 
 
@@ -707,37 +818,51 @@ export default function ContractsPage() {
 
 
                             <th className="border p-3">
+
                                 ID
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Phòng
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Người thuê
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Bắt đầu
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Kết thúc
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Tiền cọc
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Thao tác
+
                             </th>
 
 
@@ -753,12 +878,10 @@ export default function ContractsPage() {
 
 
 
-
                     <tbody>
 
 
                     {
-
 
                         contracts.map(item=>(
 
@@ -773,23 +896,12 @@ export default function ContractsPage() {
                                 </td>
 
 
-
-
-
-
-
                                 <td className="border p-3">
 
 
-                                    <b>
-
-                                        {item.roomCode}
-
-                                    </b>
-
+                                    {item.roomCode}
 
                                     <br/>
-
 
                                     {item.roomName}
 
@@ -797,81 +909,42 @@ export default function ContractsPage() {
                                 </td>
 
 
-
-
-
-
-
-
                                 <td className="border p-3">
-
 
                                     {item.tenantName}
 
-
                                 </td>
 
 
-
-
-
-
-
-
                                 <td className="border p-3">
-
 
                                     {item.startDate?.substring(0,10)}
 
-
                                 </td>
 
 
-
-
-
-
-
-
                                 <td className="border p-3">
-
 
                                     {item.endDate?.substring(0,10)}
 
-
                                 </td>
-
-
-
-
-
-
 
 
                                 <td className="border p-3">
 
+                                    {item.deposit?.toLocaleString()}
 
-                                    {item.deposit?.toLocaleString()} VNĐ
-
+                                    {" "}VNĐ
 
                                 </td>
 
 
-
-
-
-
-
-
                                 <td className="border p-3">
-
 
 
                                     <button
 
-
                                     onClick={()=>editContract(item)}
-
 
                                     className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">
 
@@ -885,13 +958,9 @@ export default function ContractsPage() {
 
 
 
-
-
                                     <button
 
-
                                     onClick={()=>deleteContract(item.contractID)}
-
 
                                     className="bg-red-600 text-white px-3 py-1 rounded">
 
@@ -902,9 +971,7 @@ export default function ContractsPage() {
                                     </button>
 
 
-
                                 </td>
-
 
 
                             </tr>
@@ -912,13 +979,10 @@ export default function ContractsPage() {
 
                         ))
 
-
                     }
 
 
-
                     </tbody>
-
 
 
                 </table>
@@ -927,12 +991,9 @@ export default function ContractsPage() {
             </div>
 
 
-
-
-
         </div>
 
-                    
+
     );
 
 

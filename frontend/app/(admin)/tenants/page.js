@@ -9,43 +9,28 @@ export default function TenantsPage(){
     const API = "https://localhost:7218/api/Tenants";
 
 
-
-    const emptyTenant = {
+    const createEmptyTenant = ()=>({
 
         fullName:"",
-
         cccd:"",
-
         phone:"",
-
         birthDate:"",
-
         gender:"",
-
         address:""
 
-    };
-
-
+    });
 
 
 
     const [tenants,setTenants] = useState([]);
 
-
-    const [tenant,setTenant] = useState(emptyTenant);
-
+    const [tenant,setTenant] = useState(createEmptyTenant());
 
     const [showForm,setShowForm] = useState(false);
 
-
     const [editId,setEditId] = useState(null);
 
-
     const [loading,setLoading] = useState(true);
-
-
-
 
 
 
@@ -97,7 +82,6 @@ export default function TenantsPage(){
 
 
 
-
     useEffect(()=>{
 
 
@@ -105,8 +89,6 @@ export default function TenantsPage(){
 
 
     },[]);
-
-
 
 
 
@@ -134,20 +116,16 @@ export default function TenantsPage(){
 
 
 
-
-
     const resetForm = ()=>{
 
 
-        setTenant(emptyTenant);
+        setTenant(createEmptyTenant());
 
 
         setEditId(null);
 
 
     };
-
-
 
 
 
@@ -164,14 +142,14 @@ export default function TenantsPage(){
 
             tenant.cccd.trim()==="" ||
 
-            tenant.phone.trim()===""
+            tenant.phone.trim()==="" ||
+
+            tenant.birthDate===""
 
         ){
 
             alert(
-
-                "Vui lòng nhập đầy đủ thông tin"
-
+                "Vui lòng nhập đầy đủ thông tin (bao gồm ngày sinh)"
             );
 
             return;
@@ -183,17 +161,14 @@ export default function TenantsPage(){
 
 
 
-        if(tenant.cccd.length !== 12)
+        if(!/^[0-9]{12}$/.test(tenant.cccd)){
 
-        {
 
-            alert(
+            alert("CCCD phải đủ 12 số");
 
-                "CCCD phải đủ 12 số"
-
-            );
 
             return;
+
 
         }
 
@@ -208,32 +183,15 @@ export default function TenantsPage(){
 
             FullName:tenant.fullName,
 
-
             CCCD:tenant.cccd,
-
 
             Phone:tenant.phone,
 
-
-            BirthDate:
-
-                tenant.birthDate
-
-                ?
-
-                tenant.birthDate
-
-                :
-
-                null,
-
-
+            BirthDate:tenant.birthDate,
 
             Gender:tenant.gender,
 
-
             Address:tenant.address
-
 
 
         };
@@ -244,149 +202,146 @@ export default function TenantsPage(){
 
 
 
-
-        let response;
-
+        try{
 
 
-
-
-        if(editId){
+            let response;
 
 
 
-            response = await fetch(
-
-                `${API}/${editId}`,
-
-                {
 
 
-                    method:"PUT",
+            if(editId){
 
 
-                    headers:{
+
+                response = await fetch(
+
+                    `${API}/${editId}`,
+
+                    {
+
+                        method:"PUT",
+
+                        headers:{
+
+                            "Content-Type":"application/json"
+
+                        },
+
+                        body:JSON.stringify({
+
+                            TenantID:editId,
+
+                            ...data
+
+                        })
+
+                    }
+
+                );
 
 
-                        "Content-Type":"application/json"
+            }
+
+            else{
 
 
-                    },
+                response = await fetch(
+
+                    API,
+
+                    {
+
+                        method:"POST",
+
+                        headers:{
+
+                            "Content-Type":"application/json"
+
+                        },
+
+                        body:JSON.stringify(data)
+
+                    }
+
+                );
 
 
-                    body:JSON.stringify({
-
-                        TenantID:editId,
-
-                        ...data
-
-                    })
+            }
 
 
-                }
 
 
-            );
+
+
+
+            if(response.ok){
+
+
+
+                alert(
+
+                    editId
+
+                    ?
+
+                    "Cập nhật người thuê thành công"
+
+                    :
+
+                    "Thêm người thuê thành công"
+
+                );
+
+
+
+                resetForm();
+
+
+                setShowForm(false);
+
+
+                getTenants();
+
+
+            }
+
+            else{
+
+
+                const error = await response.json();
+
+
+                alert(
+
+                    error.message ||
+
+                    error.title ||
+
+                    "Dữ liệu không hợp lệ"
+
+                );
+
+
+            }
 
 
         }
 
-        else{
+        catch(error){
 
 
-
-            response = await fetch(
-
-                API,
-
-                {
+            console.log(error);
 
 
-                    method:"POST",
-
-
-                    headers:{
-
-
-                        "Content-Type":"application/json"
-
-
-                    },
-
-
-                    body:JSON.stringify(data)
-
-
-                }
-
-
-            );
-
-
-        }
-
-
-
-
-
-
-
-
-
-        if(response.ok){
-
-
-
-            alert(
-
-                editId
-
-                ?
-
-                "Cập nhật thành công"
-
-                :
-
-                "Thêm người thuê thành công"
-
-            );
-
-
-
-
-            resetForm();
-
-
-            setShowForm(false);
-
-
-            getTenants();
-
-
-
-        }
-
-        else{
-
-
-            const error = await response.json();
-
-
-            alert(
-
-                error.message ||
-
-                "Có lỗi xảy ra"
-
-            );
+            alert("Không thể kết nối tới máy chủ");
 
 
         }
 
 
     };
-
-
 
 
 
@@ -404,7 +359,6 @@ export default function TenantsPage(){
             cccd:item.cccd,
 
             phone:item.phone,
-
 
             birthDate:
 
@@ -436,84 +390,78 @@ export default function TenantsPage(){
 
 
     };
+        const deleteTenant = async(id)=>{
 
 
-
-
-
-
-
-
-
-    const deleteTenant = async(id)=>{
-
-
-        if(!confirm(
-
-            "Bạn có chắc muốn xóa người thuê này?"
-
-        ))
+        if(!confirm("Bạn có chắc muốn xóa người thuê này?"))
 
             return;
 
 
 
+        try{
 
 
+            const response = await fetch(
 
+                `${API}/${id}`,
 
-        const response = await fetch(
+                {
 
-            `${API}/${id}`,
+                    method:"DELETE"
 
-            {
-
-                method:"DELETE"
-
-            }
-
-        );
-
-
-
-
-
-
-        if(response.ok){
-
-
-            alert(
-
-                "Xóa thành công"
+                }
 
             );
 
 
-            getTenants();
+
+
+            if(response.ok){
+
+
+                alert("Xóa người thuê thành công");
+
+
+                getTenants();
+
+
+            }
+
+            else{
+
+
+                const error = await response.json();
+
+
+                alert(
+
+                    error.message ||
+
+                    "Không thể xóa người thuê"
+
+                );
+
+
+            }
+
 
 
         }
 
-        else{
+        catch(error){
 
 
-            const error = await response.json();
+            console.log(error);
 
 
-            alert(
-
-                error.message ||
-
-                "Không thể xóa"
-
-            );
+            alert("Không thể kết nối tới máy chủ");
 
 
         }
 
 
     };
-
 
 
 
@@ -545,14 +493,10 @@ export default function TenantsPage(){
 
 
 
-
     return(
 
 
         <div>
-
-
-
 
 
             <div className="flex justify-between items-center">
@@ -567,10 +511,7 @@ export default function TenantsPage(){
 
 
 
-
-
                 <button
-
 
                 onClick={()=>{
 
@@ -583,7 +524,6 @@ export default function TenantsPage(){
 
                 }}
 
-
                 className="bg-blue-600 text-white px-4 py-2 rounded">
 
 
@@ -591,7 +531,6 @@ export default function TenantsPage(){
 
 
                 </button>
-
 
 
             </div>
@@ -603,35 +542,34 @@ export default function TenantsPage(){
 
 
 
-
             {
 
 
-                showForm &&
+            showForm &&
 
 
-                <div className="mt-5 border p-5 rounded">
+            <div className="mt-5 border p-5 rounded">
 
 
-                    <h2 className="font-bold text-xl mb-4">
+                <h2 className="font-bold text-xl mb-4">
 
 
-                        {
+                    {
 
-                            editId
+                    editId
 
-                            ?
+                    ?
 
-                            "Sửa người thuê"
+                    "Sửa người thuê"
 
-                            :
+                    :
 
-                            "Thêm người thuê"
+                    "Thêm người thuê"
 
-                        }
+                    }
 
 
-                    </h2>
+                </h2>
 
 
 
@@ -639,182 +577,197 @@ export default function TenantsPage(){
 
 
 
+                <input
 
+                name="fullName"
 
-                    <input
+                value={tenant.fullName}
 
-                    name="fullName"
+                onChange={handleChange}
 
-                    value={tenant.fullName}
+                placeholder="Họ tên"
 
-                    onChange={handleChange}
+                className="border p-2 block mb-3 w-full"
 
-                    placeholder="Họ tên"
+                />
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
 
 
 
 
 
+                <input
 
+                name="cccd"
 
+                value={tenant.cccd}
 
-                    <input
+                disabled={editId !== null}
 
-                    name="cccd"
+                onChange={handleChange}
 
-                    value={tenant.cccd}
+                placeholder="CCCD (12 số)"
 
-                    onChange={handleChange}
+                className="border p-2 block mb-3 w-full"
 
-                    placeholder="CCCD"
+                />
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
 
 
 
 
 
+                <input
 
+                name="phone"
 
+                value={tenant.phone}
 
-                    <input
+                onChange={handleChange}
 
-                    name="phone"
+                placeholder="Số điện thoại"
 
-                    value={tenant.phone}
+                className="border p-2 block mb-3 w-full"
 
-                    onChange={handleChange}
+                />
 
-                    placeholder="Số điện thoại"
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
 
 
 
 
+                <input
 
+                type="date"
 
+                name="birthDate"
 
+                value={tenant.birthDate}
 
-                    <input
+                onChange={handleChange}
 
-                    type="date"
+                className="border p-2 block mb-3 w-full"
 
-                    name="birthDate"
+                />
 
-                    value={tenant.birthDate}
 
-                    onChange={handleChange}
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
 
 
 
+                <select
 
+                name="gender"
 
+                value={tenant.gender}
 
+                onChange={handleChange}
 
+                className="border p-2 block mb-3 w-full">
 
 
-                    <select
+                    <option value="">
 
-                    name="gender"
+                        -- Giới tính --
 
-                    value={tenant.gender}
+                    </option>
 
-                    onChange={handleChange}
 
-                    className="border p-2 block mb-3 w-full">
+                    <option value="Nam">
 
+                        Nam
 
-                        <option value="">
+                    </option>
 
-                            -- Giới tính --
 
-                        </option>
+                    <option value="Nữ">
 
+                        Nữ
 
-                        <option value="Nam">
+                    </option>
 
-                            Nam
 
-                        </option>
+                    <option value="Khác">
 
+                        Khác
 
-                        <option value="Nữ">
+                    </option>
 
-                            Nữ
 
-                        </option>
+                </select>
 
 
-                        <option value="Khác">
 
-                            Khác
 
-                        </option>
 
 
-                    </select>
 
+                <input
 
+                name="address"
 
+                value={tenant.address}
 
+                onChange={handleChange}
 
+                placeholder="Địa chỉ"
 
+                className="border p-2 block mb-3 w-full"
 
+                />
 
 
-                    <input
 
-                    name="address"
 
-                    value={tenant.address}
 
-                    onChange={handleChange}
 
-                    placeholder="Địa chỉ"
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
+                <button
 
+                onClick={saveTenant}
 
+                className="bg-green-600 text-white px-4 py-2 rounded">
 
 
+                    Lưu
 
 
+                </button>
 
 
 
-                    <button
 
 
-                    onClick={saveTenant}
 
+                <button
 
-                    className="bg-green-600 text-white px-4 py-2 rounded">
+                onClick={()=>{
 
 
-                        Lưu
+                    resetForm();
 
 
-                    </button>
+                    setShowForm(false);
 
 
+                }}
 
+                className="bg-gray-500 text-white px-4 py-2 rounded ml-3">
 
-                </div>
+
+                    Hủy
+
+
+                </button>
+
+
+
+            </div>
 
 
             }
@@ -840,37 +793,51 @@ export default function TenantsPage(){
 
 
                             <th className="border p-3">
+
                                 Họ tên
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 CCCD
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Điện thoại
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Ngày sinh
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Giới tính
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Địa chỉ
+
                             </th>
 
 
                             <th className="border p-3">
+
                                 Thao tác
+
                             </th>
 
 
@@ -886,145 +853,123 @@ export default function TenantsPage(){
 
 
 
-
                     <tbody>
 
 
                     {
 
 
-                        tenants.map(item=>(
+                    tenants.map(item=>(
 
 
+                        <tr key={item.tenantID}>
 
-                            <tr key={item.tenantID}>
 
+                            <td className="border p-3">
 
-                                <td className="border p-3">
+                                {item.fullName}
 
-                                    {item.fullName}
+                            </td>
 
-                                </td>
 
+                            <td className="border p-3">
 
+                                {item.cccd}
 
-                                <td className="border p-3">
+                            </td>
 
-                                    {item.cccd}
 
-                                </td>
+                            <td className="border p-3">
 
+                                {item.phone}
 
+                            </td>
 
-                                <td className="border p-3">
 
-                                    {item.phone}
+                            <td className="border p-3">
 
-                                </td>
+                                {
 
+                                item.birthDate
 
+                                ?
 
-                                <td className="border p-3">
+                                item.birthDate.substring(0,10)
 
-                                    {
+                                :
 
-                                    item.birthDate
+                                ""
 
-                                    ?
+                                }
 
-                                    item.birthDate.substring(0,10)
+                            </td>
 
-                                    :
 
-                                    ""
+                            <td className="border p-3">
 
-                                    }
+                                {item.gender}
 
-                                </td>
+                            </td>
 
 
+                            <td className="border p-3">
 
-                                <td className="border p-3">
+                                {item.address}
 
-                                    {item.gender}
+                            </td>
 
-                                </td>
 
+                            <td className="border p-3">
 
 
-                                <td className="border p-3">
+                                <button
 
-                                    {item.address}
+                                onClick={()=>editTenant(item)}
 
-                                </td>
+                                className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">
 
 
+                                    Sửa
 
-                                <td className="border p-3">
 
+                                </button>
 
 
-                                    <button
 
 
-                                    onClick={()=>editTenant(item)}
 
+                                <button
 
-                                    className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">
+                                onClick={()=>deleteTenant(item.tenantID)}
 
+                                className="bg-red-600 text-white px-3 py-1 rounded">
 
-                                        Sửa
 
+                                    Xóa
 
-                                    </button>
 
+                                </button>
 
 
+                            </td>
 
 
+                        </tr>
 
-                                    <button
 
-
-                                    onClick={()=>deleteTenant(item.tenantID)}
-
-
-                                    className="bg-red-600 text-white px-3 py-1 rounded">
-
-
-                                        Xóa
-
-
-                                    </button>
-
-
-
-                                </td>
-
-
-
-                            </tr>
-
-
-
-                        ))
+                    ))
 
 
                     }
 
 
-
                     </tbody>
-
 
 
                 </table>
 
 
-
             </div>
-
-
 
 
 

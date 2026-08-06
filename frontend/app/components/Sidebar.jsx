@@ -1,43 +1,197 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-export default function Sidebar() {
-    return (
-        <aside className="w-64 min-h-screen bg-gray-800 text-white p-5">
-            <h2 className="text-2xl font-bold mb-8">
-                Rental Admin
-            </h2>
 
-            <nav className="flex flex-col gap-4">
+export default function Sidebar(){
 
-                <Link href="/dashboard">
-                    Dashboard
+
+    const router = useRouter();
+
+
+
+
+
+    const logout = ()=>{
+
+
+        localStorage.removeItem("admin");
+
+
+        alert("Đã đăng xuất");
+
+
+        router.push("/login");
+
+
+    };
+
+
+
+
+
+
+
+    return(
+
+
+        <aside className="w-64 min-h-screen bg-gray-900 text-white p-5">
+
+
+
+            <h1 className="text-2xl font-bold mb-8">
+
+                🏠 Quản lý trọ
+
+            </h1>
+
+
+
+
+
+
+
+            <nav className="space-y-3">
+
+
+
+                <Link
+
+                href="/dashboard"
+
+                className="block p-3 rounded hover:bg-gray-700">
+
+                    📊 Trang chủ
+
                 </Link>
 
-                <Link href="/rooms">
-                    Rooms
+
+
+
+
+
+                <Link
+
+                href="/rooms"
+
+                className="block p-3 rounded hover:bg-gray-700">
+
+                    🏠 Quản lý phòng
+
                 </Link>
 
-                <Link href="/tenants">
-                    Tenants
+
+
+
+
+
+
+                <Link
+
+                href="/tenants"
+
+                className="block p-3 rounded hover:bg-gray-700">
+
+                    👤 Người thuê
+
                 </Link>
 
-                <Link href="/contracts">
-                    Contracts
+
+
+
+
+
+
+                <Link
+
+                href="/contracts"
+
+                className="block p-3 rounded hover:bg-gray-700">
+
+                    📄 Hợp đồng
+
                 </Link>
 
-                <Link href="/services-management">
-    Services
-</Link>
 
-                <Link href="/bills">
-                    Bills
+
+
+
+
+
+                <Link
+
+                href="/services-management"
+
+                className="block p-3 rounded hover:bg-gray-700">
+
+                    ⚡ Dịch vụ
+
                 </Link>
 
-                <Link href="/reports">
-                    Reports
+
+
+
+
+
+
+                <Link
+
+                href="/bills"
+
+                className="block p-3 rounded hover:bg-gray-700">
+
+                    💵 Hóa đơn
+
                 </Link>
+
+
+
+
+
+
+
+                <Link
+
+                href="/reports"
+
+                className="block p-3 rounded hover:bg-gray-700">
+
+                    📈 Báo cáo
+
+                </Link>
+
+
+
+
+
+
+
+                <button
+
+                onClick={logout}
+
+                className="w-full text-left p-3 rounded hover:bg-red-600 mt-5">
+
+
+                    🚪 Đăng xuất
+
+
+                </button>
+
+
+
+
 
             </nav>
+
+
+
+
         </aside>
+
+
     );
+
+
 }

@@ -2,19 +2,35 @@
 
 import { useEffect, useState } from "react";
 
+import {
+    PieChart,
+    Pie,
+    Cell,
+    Tooltip,
+    Legend,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    ResponsiveContainer
+} from "recharts";
 
-export default function ReportsPage() {
+
+
+export default function ReportsPage(){
 
 
     const [rooms,setRooms] = useState([]);
 
     const [tenants,setTenants] = useState([]);
 
+    const [contracts,setContracts] = useState([]);
+
     const [bills,setBills] = useState([]);
 
 
     const [loading,setLoading] = useState(true);
-
 
 
 
@@ -29,11 +45,9 @@ export default function ReportsPage() {
 
 
                 const [
-
                     roomsRes,
-
                     tenantsRes,
-
+                    contractsRes,
                     billsRes
 
                 ] = await Promise.all([
@@ -50,6 +64,11 @@ export default function ReportsPage() {
 
 
                     fetch(
+                        "https://localhost:7218/api/Contracts"
+                    ),
+
+
+                    fetch(
                         "https://localhost:7218/api/Bills"
                     )
 
@@ -59,22 +78,24 @@ export default function ReportsPage() {
 
 
 
-
-                const roomsData = await roomsRes.json();
-
-                const tenantsData = await tenantsRes.json();
-
-                const billsData = await billsRes.json();
+                setRooms(
+                    await roomsRes.json()
+                );
 
 
+                setTenants(
+                    await tenantsRes.json()
+                );
 
 
+                setContracts(
+                    await contractsRes.json()
+                );
 
-                setRooms(roomsData);
 
-                setTenants(tenantsData);
-
-                setBills(billsData);
+                setBills(
+                    await billsRes.json()
+                );
 
 
 
@@ -82,18 +103,18 @@ export default function ReportsPage() {
 
             catch(error){
 
-
                 console.log(error);
 
+                alert(
+                    "Không thể tải báo cáo"
+                );
 
             }
 
 
             finally{
 
-
                 setLoading(false);
-
 
             }
 
@@ -101,14 +122,10 @@ export default function ReportsPage() {
         };
 
 
-
         loadData();
 
 
     },[]);
-
-
-
 
 
 
@@ -128,10 +145,7 @@ export default function ReportsPage() {
 
         );
 
-
     }
-
-
 
 
 
@@ -142,50 +156,19 @@ export default function ReportsPage() {
     const totalRooms = rooms.length;
 
 
-
-
-
     const rentedRooms = rooms.filter(
 
-        room => room.status === "Đang thuê"
+        r=>r.status==="Đang thuê"
 
     ).length;
-
-
-
 
 
 
     const emptyRooms = rooms.filter(
 
-        room => room.status === "Còn trống"
+        r=>r.status==="Còn trống"
 
     ).length;
-
-
-
-
-
-
-
-
-    const fillRate = totalRooms > 0
-
-        ?
-
-        Math.round(
-
-            rentedRooms / totalRooms * 100
-
-        )
-
-        :
-
-        0;
-
-
-
-
 
 
 
@@ -193,9 +176,70 @@ export default function ReportsPage() {
 
     const totalRevenue = bills.reduce(
 
-        (sum,bill)=>
+        (sum,b)=>
 
-            sum + (bill.totalAmount || 0),
+        sum + Number(b.totalAmount || 0),
+
+        0
+
+    );
+
+
+
+
+
+    const paidBills = bills.filter(
+
+        b=>b.status==="Đã thanh toán"
+
+    ).length;
+
+
+
+    const unpaidBills = bills.filter(
+
+        b=>b.status==="Chưa thanh toán"
+
+    ).length;
+
+
+
+
+
+    const totalElectric = bills.reduce(
+
+        (sum,b)=>
+
+        sum +
+
+        (
+
+            b.electricNew -
+
+            b.electricOld
+
+        ),
+
+        0
+
+    );
+
+
+
+
+    const totalWater = bills.reduce(
+
+        (sum,b)=>
+
+        sum +
+
+        (
+
+            b.waterNew -
+
+            b.waterOld
+
+        ),
 
         0
 
@@ -206,590 +250,589 @@ export default function ReportsPage() {
 
 
 
+    const fillRate = totalRooms
 
+    ?
 
-    const paidBills = bills.filter(
+    Math.round(
 
-        bill => bill.status === "Đã thanh toán"
+        rentedRooms /
 
-    ).length;
+        totalRooms *
 
+        100
 
+    )
 
+    :
 
+    0;
 
 
 
 
-    const unpaidBills = bills.filter(
 
-        bill => bill.status === "Chưa thanh toán"
 
-    ).length;
+    // biểu đồ phòng
 
 
+    const roomChartData=[
 
+        {
+            name:"Đang thuê",
+            value:rentedRooms
+        },
 
 
+        {
+            name:"Còn trống",
+            value:emptyRooms
+        }
 
+    ];
 
 
 
 
 
-    return (
 
+    // biểu đồ hóa đơn
 
-        <div>
 
+    const billChartData=[
 
 
+        {
+            name:"Đã thanh toán",
+            value:paidBills
+        },
 
 
-            <h1 className="text-3xl font-bold">
+        {
+            name:"Chưa thanh toán",
+            value:unpaidBills
+        }
 
-                Báo cáo thống kê
 
-            </h1>
+    ];
 
 
 
 
 
 
-            <p className="mt-2 text-gray-600">
 
-                Thống kê dữ liệu thực tế từ hệ thống quản lý phòng trọ
+    // doanh thu theo tháng
 
-            </p>
 
+    const revenueChartData = [];
 
 
+    bills.forEach(bill=>{
 
 
+        let month =
 
+        bill.billMonth + "/" + bill.billYear;
 
 
 
-            <div className="grid grid-cols-3 gap-6 mt-6">
+        let item =
 
+        revenueChartData.find(
 
+            x=>x.name===month
 
+        );
 
 
 
+        if(item){
 
-                <div className="bg-white border rounded-lg p-5 shadow">
 
+            item.value +=
 
-                    <p className="text-gray-500">
+            Number(
+                bill.totalAmount || 0
+            );
 
-                        Tổng số phòng
 
-                    </p>
+        }
 
+        else{
 
-                    <h2 className="text-3xl font-bold mt-2">
 
-                        {totalRooms}
+            revenueChartData.push({
 
-                    </h2>
+                name:month,
 
+                value:Number(
+                    bill.totalAmount || 0
+                )
 
-                </div>
+            });
 
 
+        }
 
 
 
+    });
 
 
 
 
 
-                <div className="bg-white border rounded-lg p-5 shadow">
 
 
-                    <p className="text-gray-500">
+    const money = (value)=>
 
-                        Phòng đang thuê
+        Number(value)
 
-                    </p>
+        .toLocaleString("vi-VN");
 
 
-                    <h2 className="text-3xl font-bold mt-2">
 
-                        {rentedRooms}
 
-                    </h2>
 
 
-                </div>
 
 
 
+    return(
 
 
+    <div>
 
 
+        <h1 className="text-3xl font-bold">
 
+            Báo cáo thống kê
 
+        </h1>
 
-                <div className="bg-white border rounded-lg p-5 shadow">
 
+        <p className="mt-2 text-gray-600">
 
-                    <p className="text-gray-500">
+            Tổng hợp dữ liệu hệ thống quản lý phòng trọ
 
-                        Phòng còn trống
+        </p>
 
-                    </p>
 
 
-                    <h2 className="text-3xl font-bold mt-2">
 
-                        {emptyRooms}
 
-                    </h2>
 
 
-                </div>
+        <div className="grid grid-cols-4 gap-5 mt-8">
 
 
+            <Card title="Tổng phòng" value={totalRooms}/>
 
 
+            <Card title="Đang thuê" value={rentedRooms}/>
 
 
+            <Card title="Còn trống" value={emptyRooms}/>
 
 
-
-
-                <div className="bg-white border rounded-lg p-5 shadow">
-
-
-                    <p className="text-gray-500">
-
-                        Người thuê
-
-                    </p>
-
-
-                    <h2 className="text-3xl font-bold mt-2">
-
-                        {tenants.length}
-
-                    </h2>
-
-
-                </div>
-
-
-
-
-
-
-
-
-
-
-                <div className="bg-white border rounded-lg p-5 shadow">
-
-
-                    <p className="text-gray-500">
-
-                        Hóa đơn đã thanh toán
-
-                    </p>
-
-
-                    <h2 className="text-3xl font-bold mt-2">
-
-                        {paidBills}
-
-                    </h2>
-
-
-                </div>
-
-
-
-
-
-
-
-
-
-
-                <div className="bg-white border rounded-lg p-5 shadow">
-
-
-                    <p className="text-gray-500">
-
-                        Hóa đơn chưa thanh toán
-
-                    </p>
-
-
-                    <h2 className="text-3xl font-bold mt-2">
-
-                        {unpaidBills}
-
-                    </h2>
-
-
-                </div>
-
-
-
-
-
-            </div>
-
-
-
-
-
-
-
-
-
-            <div className="grid grid-cols-2 gap-6 mt-8">
-
-
-
-
-
-
-
-                <div className="bg-white border rounded-lg p-5 shadow">
-
-
-                    <h2 className="text-xl font-bold">
-
-                        Tổng doanh thu
-
-                    </h2>
-
-
-                    <p className="text-3xl font-bold mt-3">
-
-
-                        {totalRevenue.toLocaleString()}
-
-                        {" "}VNĐ
-
-
-                    </p>
-
-
-                </div>
-
-
-
-
-
-
-
-
-
-
-                <div className="bg-white border rounded-lg p-5 shadow">
-
-
-                    <h2 className="text-xl font-bold">
-
-                        Tỷ lệ lấp đầy
-
-                    </h2>
-
-
-                    <p className="text-3xl font-bold mt-3">
-
-
-                        {fillRate}%
-
-
-                    </p>
-
-
-                    <p className="mt-2 text-gray-600">
-
-
-                        {rentedRooms}/{totalRooms} phòng
-
-
-                    </p>
-
-
-                </div>
-
-
-
-
-
-            </div>
-
-
-
-
-
-
-
-
-
-            <div className="mt-10">
-
-
-                <h2 className="text-2xl font-bold mb-4">
-
-                    Danh sách hóa đơn
-
-                </h2>
-
-
-
-
-
-
-
-
-
-                <table className="w-full border">
-
-
-
-                    <thead>
-
-
-                        <tr className="bg-gray-100">
-
-
-                            <th className="border p-3">
-
-                                Phòng
-
-                            </th>
-
-
-
-                            <th className="border p-3">
-
-                                Người thuê
-
-                            </th>
-
-
-
-                            <th className="border p-3">
-
-                                Tháng/Năm
-
-                            </th>
-
-
-
-
-                            <th className="border p-3">
-
-                                Điện
-
-                            </th>
-
-
-
-                            <th className="border p-3">
-
-                                Nước
-
-                            </th>
-
-
-
-
-                            <th className="border p-3">
-
-                                Tổng tiền
-
-                            </th>
-
-
-
-
-                            <th className="border p-3">
-
-                                Trạng thái
-
-                            </th>
-
-
-
-                        </tr>
-
-
-                    </thead>
-
-
-
-
-
-
-
-
-
-                    <tbody>
-
-
-                    {
-
-                        bills.map(item=>(
-
-
-                            <tr key={item.billID}>
-
-
-                                <td className="border p-3">
-
-
-                                    {item.roomCode}
-
-                                    <br/>
-
-                                    {item.roomName}
-
-
-                                </td>
-
-
-
-
-
-                                <td className="border p-3">
-
-
-                                    {item.tenantName}
-
-
-                                </td>
-
-
-
-
-
-                                <td className="border p-3">
-
-
-                                    {item.billMonth}/{item.billYear}
-
-
-                                </td>
-
-
-
-
-
-                                <td className="border p-3">
-
-
-                                    {item.electricUsed || 
-
-                                    (
-                                        item.electricNew -
-
-                                        item.electricOld
-
-                                    )
-
-                                    }
-
-                                    kWh
-
-
-                                </td>
-
-
-
-
-
-                                <td className="border p-3">
-
-
-                                    {item.waterUsed ||
-
-                                    (
-
-                                        item.waterNew -
-
-                                        item.waterOld
-
-                                    )
-
-                                    }
-
-                                    m³
-
-
-                                </td>
-
-
-
-
-
-                                <td className="border p-3">
-
-
-                                    {(item.totalAmount || 0)
-
-                                    .toLocaleString()}
-
-                                    {" "}VNĐ
-
-
-                                </td>
-
-
-
-
-
-                                <td className="border p-3">
-
-
-                                    {item.status}
-
-
-                                </td>
-
-
-
-
-
-                            </tr>
-
-
-                        ))
-
-                    }
-
-
-
-                    </tbody>
-
-
-
-                </table>
-
-
-
-
-            </div>
-
-
-
+            <Card title="Người thuê" value={tenants.length}/>
 
 
 
         </div>
 
 
+
+
+
+
+
+        <div className="grid grid-cols-4 gap-5 mt-5">
+
+
+            <Card title="Hợp đồng" value={contracts.length}/>
+
+
+            <Card title="Hóa đơn" value={bills.length}/>
+
+
+            <Card title="Điện tiêu thụ" value={totalElectric+" kWh"}/>
+
+
+            <Card title="Nước tiêu thụ" value={totalWater+" m³"}/>
+
+
+        </div>
+
+
+
+
+
+
+
+        <div className="grid grid-cols-2 gap-5 mt-5">
+
+
+            <Card
+
+            title="Doanh thu"
+
+            value={money(totalRevenue)+" VNĐ"}
+
+            />
+
+
+
+            <Card
+
+            title="Tỷ lệ lấp đầy"
+
+            value={fillRate+"%"}
+
+            />
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+        <div className="grid grid-cols-3 gap-5 mt-10">
+
+
+
+            <ChartBox title="Trạng thái phòng">
+
+
+                <PieChart width={350} height={300}>
+
+
+                    <Pie
+
+                    data={roomChartData}
+
+                    dataKey="value"
+
+                    nameKey="name"
+
+                    outerRadius={100}
+
+                    >
+
+                    {
+                        roomChartData.map(
+                            (e,i)=>
+                            <Cell key={i}/>
+                        )
+                    }
+
+
+                    </Pie>
+
+
+                    <Tooltip/>
+
+                    <Legend/>
+
+
+                </PieChart>
+
+
+            </ChartBox>
+
+
+
+
+
+
+            <ChartBox title="Trạng thái hóa đơn">
+
+
+                <PieChart width={350} height={300}>
+
+
+                    <Pie
+
+                    data={billChartData}
+
+                    dataKey="value"
+
+                    nameKey="name"
+
+                    outerRadius={100}
+
+                    >
+
+
+                    {
+                        billChartData.map(
+                            (e,i)=>
+                            <Cell key={i}/>
+                        )
+                    }
+
+
+                    </Pie>
+
+
+                    <Tooltip/>
+
+                    <Legend/>
+
+
+                </PieChart>
+
+
+            </ChartBox>
+
+
+
+
+
+
+
+
+            <ChartBox title="Doanh thu theo tháng">
+
+
+            <ResponsiveContainer width="100%" height={300}>
+
+
+                <BarChart data={revenueChartData}>
+
+
+                    <CartesianGrid/>
+
+
+                    <XAxis dataKey="name"/>
+
+
+                    <YAxis/>
+
+
+                    <Tooltip/>
+
+
+                    <Bar dataKey="value"/>
+
+
+                </BarChart>
+
+
+            </ResponsiveContainer>
+
+
+
+            </ChartBox>
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+        <div className="mt-10">
+
+
+        <h2 className="text-2xl font-bold mb-4">
+
+            Danh sách hóa đơn
+
+        </h2>
+
+
+
+
+        <table className="w-full border">
+
+
+        <thead>
+
+        <tr className="bg-gray-100">
+
+
+            <th className="border p-3">
+                Phòng
+            </th>
+
+
+            <th className="border p-3">
+                Người thuê
+            </th>
+
+
+            <th className="border p-3">
+                Tháng
+            </th>
+
+
+            <th className="border p-3">
+                Tiền
+            </th>
+
+
+            <th className="border p-3">
+                Trạng thái
+            </th>
+
+
+        </tr>
+
+
+        </thead>
+
+
+
+
+        <tbody>
+
+
+        {
+            bills.map(b=>(
+
+
+            <tr key={b.billID}>
+
+
+                <td className="border p-3">
+
+                    {b.roomName}
+
+                </td>
+
+
+                <td className="border p-3">
+
+                    {b.tenantName}
+
+                </td>
+
+
+                <td className="border p-3">
+
+                    {b.billMonth}/{b.billYear}
+
+                </td>
+
+
+                <td className="border p-3">
+
+                    {money(b.totalAmount)}
+                    {" "}VNĐ
+
+                </td>
+
+
+                <td className="border p-3">
+
+                    {b.status}
+
+                </td>
+
+
+            </tr>
+
+
+            ))
+        }
+
+
+        </tbody>
+
+
+        </table>
+
+
+        </div>
+
+
+
+
+
+    </div>
+
+
     );
+
+
+}
+
+
+
+
+
+
+function Card({title,value}){
+
+
+return(
+
+
+<div className="border rounded-lg p-5 shadow">
+
+
+<p className="text-gray-500">
+
+{title}
+
+</p>
+
+
+<h2 className="text-3xl font-bold mt-2">
+
+{value}
+
+</h2>
+
+
+</div>
+
+
+);
+
+
+}
+
+
+
+
+
+function ChartBox({title,children}){
+
+
+return(
+
+
+<div className="border rounded-lg p-5 shadow">
+
+
+<h2 className="text-xl font-bold mb-5">
+
+{title}
+
+</h2>
+
+
+{children}
+
+
+</div>
+
+
+);
 
 
 }

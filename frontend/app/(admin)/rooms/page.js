@@ -16,33 +16,24 @@ export default function RoomsPage() {
 
 
 
-
-
-    const emptyRoom = {
+    const createEmptyRoom = ()=>({
 
         roomCode:"",
-
         roomName:"",
-
         roomType:"",
-
         area:"",
-
         price:"",
-
         status:"Còn trống"
 
-    };
+    });
 
 
 
-
-
-    const [room, setRoom] = useState(emptyRoom);
-
+    const [room, setRoom] = useState(createEmptyRoom());
 
 
 
+    const API = "https://localhost:7218/api/Rooms";
 
 
 
@@ -54,11 +45,7 @@ export default function RoomsPage() {
         try{
 
 
-            const response = await fetch(
-
-                "https://localhost:7218/api/Rooms"
-
-            );
+            const response = await fetch(API);
 
 
             const data = await response.json();
@@ -97,8 +84,6 @@ export default function RoomsPage() {
 
 
 
-
-
     useEffect(()=>{
 
 
@@ -106,8 +91,6 @@ export default function RoomsPage() {
 
 
     },[]);
-
-
 
 
 
@@ -135,19 +118,16 @@ export default function RoomsPage() {
 
 
 
-
-
     const resetForm = ()=>{
 
 
-        setRoom(emptyRoom);
+        setRoom(createEmptyRoom());
 
 
         setEditId(null);
 
 
     };
-
 
 
 
@@ -183,10 +163,7 @@ export default function RoomsPage() {
 
 
 
-
-        if(Number(room.area)<=0)
-
-        {
+        if(Number(room.area)<=0){
 
             alert("Diện tích phải lớn hơn 0");
 
@@ -198,10 +175,7 @@ export default function RoomsPage() {
 
 
 
-
-        if(Number(room.price)<=0)
-
-        {
+        if(Number(room.price)<=0){
 
             alert("Giá thuê phải lớn hơn 0");
 
@@ -244,148 +218,166 @@ export default function RoomsPage() {
 
 
 
-
-        let response;
-
+        try{
 
 
-
-
-        if(editId){
+            let response;
 
 
 
-            response = await fetch(
 
 
-                `https://localhost:7218/api/Rooms/${editId}`,
-
-                {
+            if(editId){
 
 
-                    method:"PUT",
+                response = await fetch(
+
+                    `${API}/${editId}`,
+
+                    {
+
+                        method:"PUT",
+
+                        headers:{
+
+                            "Content-Type":"application/json"
+
+                        },
+
+                        body:JSON.stringify({
+
+                            roomID:editId,
+
+                            ...data
+
+                        })
+
+                    }
+
+                );
 
 
-                    headers:{
+            }
+
+            else{
 
 
-                        "Content-Type":"application/json"
+                response = await fetch(
+
+                    API,
+
+                    {
+
+                        method:"POST",
+
+                        headers:{
+
+                            "Content-Type":"application/json"
+
+                        },
+
+                        body:JSON.stringify(data)
+
+                    }
+
+                );
 
 
-                    },
+            }
 
 
-                    body:JSON.stringify({
 
-                        roomID:editId,
 
-                        ...data
 
-                    })
+
+
+            if(response.ok){
+
+
+
+                alert(
+
+                    editId
+
+                    ?
+
+                    "Cập nhật phòng thành công"
+
+                    :
+
+                    "Thêm phòng thành công"
+
+                );
+
+
+
+                resetForm();
+
+
+                setShowForm(false);
+
+
+                getRooms();
+
+
+            }
+
+            else{
+
+
+
+                const error = await response.json();
+
+
+
+                if(error.errors){
+
+
+
+                    const firstError = Object.values(error.errors)[0][0];
+
+
+                    alert(firstError);
+
+
+
+                }
+
+                else{
+
+
+                    alert(
+
+                        error.message ||
+
+                        error.title ||
+
+                        "Dữ liệu không hợp lệ"
+
+                    );
 
 
                 }
 
 
-            );
+            }
+
+
 
 
 
         }
 
-        else{
+        catch(error){
 
 
-
-            response = await fetch(
-
-
-                "https://localhost:7218/api/Rooms",
-
-                {
+            console.log(error);
 
 
-                    method:"POST",
-
-
-                    headers:{
-
-
-                        "Content-Type":"application/json"
-
-
-                    },
-
-
-                    body:JSON.stringify(data)
-
-
-                }
-
-
-            );
+            alert("Không thể kết nối tới máy chủ");
 
 
         }
-
-
-
-
-
-
-
-        if(response.ok){
-
-
-
-            alert(
-
-                editId
-
-                ?
-
-                "Cập nhật phòng thành công"
-
-                :
-
-                "Thêm phòng thành công"
-
-            );
-
-
-
-
-
-            resetForm();
-
-
-            setShowForm(false);
-
-
-            getRooms();
-
-
-
-        }
-
-        else{
-
-
-
-            const error = await response.json();
-
-
-            alert(
-
-                error.message ||
-
-                "Có lỗi xảy ra"
-
-            );
-
-
-        }
-
 
 
     };
@@ -418,6 +410,7 @@ export default function RoomsPage() {
         });
 
 
+
         setEditId(item.roomID);
 
 
@@ -425,7 +418,6 @@ export default function RoomsPage() {
 
 
     };
-
 
 
 
@@ -445,58 +437,70 @@ export default function RoomsPage() {
 
 
 
-        const response = await fetch(
+        try{
 
 
-            `https://localhost:7218/api/Rooms/${id}`,
+            const response = await fetch(
 
-            {
+                `${API}/${id}`,
+
+                {
+
+                    method:"DELETE"
+
+                }
+
+            );
 
 
-                method:"DELETE"
+
+
+
+            if(response.ok){
+
+
+                alert("Xóa phòng thành công");
+
+
+                getRooms();
+
+
+            }
+
+            else{
+
+
+                const error = await response.json();
+
+
+                alert(
+
+                    error.message ||
+
+                    "Không thể xóa phòng"
+
+                );
 
 
             }
 
 
-        );
-
-
-
-
-
-
-        if(response.ok){
-
-
-            alert("Xóa phòng thành công");
-
-
-            getRooms();
-
 
         }
 
-        else{
+        catch(error){
 
 
-            const error = await response.json();
+            console.log(error);
 
 
-            alert(
-
-                error.message ||
-
-                "Không thể xóa phòng"
-
-            );
+            alert("Không thể kết nối tới máy chủ");
 
 
         }
 
 
     };
-
 
 
 
@@ -528,14 +532,9 @@ export default function RoomsPage() {
 
 
 
-
     return (
 
-
         <div>
-
-
-
 
 
             <div className="flex justify-between items-center">
@@ -550,22 +549,15 @@ export default function RoomsPage() {
 
 
 
-
-
                 <button
-
 
                 onClick={()=>{
 
-
                     resetForm();
-
 
                     setShowForm(true);
 
-
                 }}
-
 
                 className="bg-blue-600 text-white px-4 py-2 rounded">
 
@@ -574,7 +566,6 @@ export default function RoomsPage() {
 
 
                 </button>
-
 
 
             </div>
@@ -586,203 +577,214 @@ export default function RoomsPage() {
 
 
 
-
             {
 
+            showForm &&
 
-                showForm &&
 
+            <div className="mt-5 border p-5 rounded">
 
-                <div className="mt-5 border p-5 rounded">
 
+                <h2 className="font-bold text-xl mb-4">
 
 
-                    <h2 className="font-bold text-xl mb-4">
+                    {
 
+                    editId
 
-                        {
+                    ?
 
-                            editId
+                    "Sửa phòng"
 
-                            ?
+                    :
 
-                            "Sửa phòng"
+                    "Thêm phòng mới"
 
-                            :
+                    }
 
-                            "Thêm phòng mới"
 
+                </h2>
 
-                        }
 
 
-                    </h2>
 
 
 
+                <input
 
+                name="roomCode"
 
+                value={room.roomCode}
 
+                disabled={editId !== null}
 
+                onChange={handleChange}
 
+                placeholder="Mã phòng"
 
-                    <input
+                className="border p-2 block mb-3 w-full"
 
-                    name="roomCode"
+                />
 
-                    value={room.roomCode}
 
-                    onChange={handleChange}
 
-                    placeholder="Mã phòng"
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
 
 
+                <input
 
+                name="roomName"
 
+                value={room.roomName}
 
+                onChange={handleChange}
 
+                placeholder="Tên phòng"
 
+                className="border p-2 block mb-3 w-full"
 
-                    <input
+                />
 
-                    name="roomName"
 
-                    value={room.roomName}
 
-                    onChange={handleChange}
 
-                    placeholder="Tên phòng"
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
 
 
+                <input
 
+                name="roomType"
 
+                value={room.roomType}
 
+                onChange={handleChange}
 
+                placeholder="Loại phòng"
 
+                className="border p-2 block mb-3 w-full"
 
-                    <input
+                />
 
-                    name="roomType"
 
-                    value={room.roomType}
 
-                    onChange={handleChange}
 
-                    placeholder="Loại phòng"
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
 
+                <input
 
+                name="area"
 
+                value={room.area}
 
+                onChange={handleChange}
 
+                placeholder="Diện tích"
 
+                className="border p-2 block mb-3 w-full"
 
+                />
 
-                    <input
 
-                    name="area"
 
-                    value={room.area}
 
-                    onChange={handleChange}
 
-                    placeholder="Diện tích"
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
 
+                <input
 
+                name="price"
 
+                value={room.price}
 
+                onChange={handleChange}
 
+                placeholder="Giá thuê"
 
+                className="border p-2 block mb-3 w-full"
 
+                />
 
-                    <input
 
-                    name="price"
 
-                    value={room.price}
 
-                    onChange={handleChange}
 
-                    placeholder="Giá thuê"
 
-                    className="border p-2 block mb-3 w-full"
 
-                    />
+                <select
 
+                name="status"
 
+                value={room.status}
 
+                onChange={handleChange}
 
+                className="border p-2 block mb-3 w-full">
 
 
+                    <option value="Còn trống">
 
+                        Còn trống
 
-                    <select
+                    </option>
 
-                    name="status"
 
-                    value={room.status}
+                    <option value="Đang thuê">
 
-                    onChange={handleChange}
+                        Đang thuê
 
-                    className="border p-2 block mb-3 w-full">
+                    </option>
 
 
-                        <option value="Còn trống">
+                </select>
 
-                            Còn trống
 
-                        </option>
 
 
-                        <option value="Đang thuê">
 
-                            Đang thuê
 
-                        </option>
 
+                <button
 
-                    </select>
+                onClick={saveRoom}
 
+                className="bg-green-600 text-white px-4 py-2 rounded">
 
 
+                    Lưu
 
 
+                </button>
 
 
 
-                    <button
 
 
-                    onClick={saveRoom}
 
+                <button
 
-                    className="bg-green-600 text-white px-4 py-2 rounded">
+                onClick={()=>{
 
+                    resetForm();
 
-                        Lưu
+                    setShowForm(false);
 
+                }}
 
-                    </button>
+                className="bg-gray-500 text-white px-4 py-2 rounded ml-3">
 
 
+                    Hủy
 
 
-                </div>
+                </button>
+
+
+
+            </div>
 
 
             }
@@ -798,9 +800,7 @@ export default function RoomsPage() {
             <div className="mt-6">
 
 
-
                 <table className="w-full border">
-
 
 
                     <thead>
@@ -870,131 +870,117 @@ export default function RoomsPage() {
 
 
 
-
                     <tbody>
 
 
                     {
 
-
-                        rooms.map(item=>(
-
+                    rooms.map(item=>(
 
 
-                            <tr key={item.roomID}>
+                        <tr key={item.roomID}>
 
 
-                                <td className="border p-3">
+                            <td className="border p-3">
 
-                                    {item.roomCode}
+                                {item.roomCode}
 
-                                </td>
-
-
-                                <td className="border p-3">
-
-                                    {item.roomName}
-
-                                </td>
+                            </td>
 
 
-                                <td className="border p-3">
+                            <td className="border p-3">
 
-                                    {item.roomType}
+                                {item.roomName}
 
-                                </td>
-
-
-                                <td className="border p-3">
-
-                                    {item.price?.toLocaleString()}
-
-                                    {" "}VNĐ
-
-                                </td>
+                            </td>
 
 
-                                <td className="border p-3">
+                            <td className="border p-3">
 
-                                    {item.area} m²
+                                {item.roomType}
 
-                                </td>
-
-
-                                <td className="border p-3">
-
-                                    {item.status}
-
-                                </td>
+                            </td>
 
 
-                                <td className="border p-3">
+                            <td className="border p-3">
+
+                                {item.price?.toLocaleString()} VNĐ
+
+                            </td>
 
 
-                                    <button
+                            <td className="border p-3">
+
+                                {item.area} m²
+
+                            </td>
 
 
-                                    onClick={()=>editRoom(item)}
+                            <td className="border p-3">
+
+                                {item.status}
+
+                            </td>
 
 
-                                    className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">
 
 
-                                        Sửa
+                            <td className="border p-3">
 
 
-                                    </button>
+
+                                <button
+
+                                onClick={()=>editRoom(item)}
+
+                                className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">
+
+
+                                    Sửa
+
+
+                                </button>
 
 
 
 
 
+                                <button
 
-                                    <button
+                                onClick={()=>deleteRoom(item.roomID)}
 
-
-                                    onClick={()=>deleteRoom(item.roomID)}
-
-
-                                    className="bg-red-600 text-white px-3 py-1 rounded">
+                                className="bg-red-600 text-white px-3 py-1 rounded">
 
 
-                                        Xóa
+                                    Xóa
 
 
-                                    </button>
+                                </button>
 
 
-                                </td>
+
+                            </td>
 
 
-                            </tr>
+                        </tr>
 
 
-                        ))
-
+                    ))
 
                     }
-
 
 
                     </tbody>
 
 
-
                 </table>
-
 
 
             </div>
 
 
 
-
-
-
         </div>
-
 
     );
 

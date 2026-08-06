@@ -14,8 +14,9 @@ export default function DashboardPage(){
 
     const [bills,setBills] = useState([]);
 
-
     const [loading,setLoading] = useState(true);
+
+
 
 
 
@@ -31,13 +32,9 @@ export default function DashboardPage(){
 
 
                 const [
-
                     roomsRes,
-
                     tenantsRes,
-
                     contractsRes,
-
                     billsRes
 
                 ] = await Promise.all([
@@ -69,26 +66,79 @@ export default function DashboardPage(){
 
 
 
+                if(
+                    !roomsRes.ok ||
+                    !tenantsRes.ok ||
+                    !contractsRes.ok ||
+                    !billsRes.ok
+                ){
 
-                const roomsData = await roomsRes.json();
+                    throw new Error(
+                        "API trả về lỗi"
+                    );
 
-                const tenantsData = await tenantsRes.json();
-
-                const contractsData = await contractsRes.json();
-
-                const billsData = await billsRes.json();
+                }
 
 
 
 
 
-                setRooms(roomsData);
 
-                setTenants(tenantsData);
+                const roomsData =
+                    await roomsRes.json();
 
-                setContracts(contractsData);
 
-                setBills(billsData);
+
+                const tenantsData =
+                    await tenantsRes.json();
+
+
+
+                const contractsData =
+                    await contractsRes.json();
+
+
+
+                const billsData =
+                    await billsRes.json();
+
+
+
+
+
+
+
+                setRooms(
+                    Array.isArray(roomsData)
+                    ? roomsData
+                    : []
+                );
+
+
+
+                setTenants(
+                    Array.isArray(tenantsData)
+                    ? tenantsData
+                    : []
+                );
+
+
+
+                setContracts(
+                    Array.isArray(contractsData)
+                    ? contractsData
+                    : []
+                );
+
+
+
+                setBills(
+                    Array.isArray(billsData)
+                    ? billsData
+                    : []
+                );
+
+
 
 
 
@@ -100,8 +150,12 @@ export default function DashboardPage(){
                 console.log(error);
 
 
-            }
+                alert(
+                    "Không thể tải dữ liệu Dashboard"
+                );
 
+
+            }
 
             finally{
 
@@ -119,7 +173,9 @@ export default function DashboardPage(){
         loadData();
 
 
+
     },[]);
+
 
 
 
@@ -141,6 +197,7 @@ export default function DashboardPage(){
 
         );
 
+
     }
 
 
@@ -155,23 +212,61 @@ export default function DashboardPage(){
 
 
 
-
     const rentedRooms = rooms.filter(
 
-        room=>room.status==="Đang thuê"
+        room =>
+        room.status === "Đang thuê"
 
     ).length;
-
-
 
 
 
 
     const emptyRooms = rooms.filter(
 
-        room=>room.status==="Còn trống"
+        room =>
+        room.status === "Còn trống"
 
     ).length;
+
+
+
+
+
+    const totalTenants = tenants.length;
+
+
+
+    const totalContracts = contracts.length;
+
+
+
+    const totalBills = bills.length;
+
+
+
+
+
+
+    const paidBills = bills.filter(
+
+        bill =>
+        bill.status === "Đã thanh toán"
+
+    ).length;
+
+
+
+
+
+
+    const unpaidBills = bills.filter(
+
+        bill =>
+        bill.status === "Chưa thanh toán"
+
+    ).length;
+
 
 
 
@@ -183,7 +278,9 @@ export default function DashboardPage(){
 
         (sum,bill)=>
 
-            sum + (bill.totalAmount || 0),
+            sum + Number(
+                bill.totalAmount || 0
+            ),
 
         0
 
@@ -195,11 +292,19 @@ export default function DashboardPage(){
 
 
 
-    const paidBills = bills.filter(
+    const roomPercent = totalRooms > 0
 
-        bill=>bill.status==="Đã thanh toán"
+        ?
 
-    ).length;
+        Math.round(
+
+            rentedRooms / totalRooms * 100
+
+        )
+
+        :
+
+        0;
 
 
 
@@ -207,11 +312,40 @@ export default function DashboardPage(){
 
 
 
-    const unpaidBills = bills.filter(
+    const moneyFormat = (money)=>{
 
-        bill=>bill.status==="Chưa thanh toán"
 
-    ).length;
+        return Number(money || 0)
+
+        .toLocaleString("vi-VN");
+
+
+    };
+
+
+
+
+
+
+
+
+    const recentBills = [
+
+        ...bills
+
+    ]
+
+    .sort(
+
+        (a,b)=>
+
+            b.billID - a.billID
+
+    )
+
+    .slice(0,5);
+
+
 
 
 
@@ -225,13 +359,11 @@ export default function DashboardPage(){
         <div>
 
 
-
             <h1 className="text-3xl font-bold">
 
                 Dashboard
 
             </h1>
-
 
 
 
@@ -253,102 +385,28 @@ export default function DashboardPage(){
 
 
 
+                <Card
+                    title="Tổng phòng"
+                    value={totalRooms}
+                />
 
 
-                <div className="border rounded p-5 shadow">
+                <Card
+                    title="Đang thuê"
+                    value={rentedRooms}
+                />
 
-                    <h2 className="font-bold text-xl">
 
-                        Tổng phòng
+                <Card
+                    title="Còn trống"
+                    value={emptyRooms}
+                />
 
-                    </h2>
 
-
-                    <p className="text-3xl mt-3">
-
-                        {totalRooms}
-
-                    </p>
-
-
-                </div>
-
-
-
-
-
-
-
-
-                <div className="border rounded p-5 shadow">
-
-                    <h2 className="font-bold text-xl">
-
-                        Đang thuê
-
-                    </h2>
-
-
-                    <p className="text-3xl mt-3">
-
-                        {rentedRooms}
-
-                    </p>
-
-
-                </div>
-
-
-
-
-
-
-
-
-                <div className="border rounded p-5 shadow">
-
-                    <h2 className="font-bold text-xl">
-
-                        Còn trống
-
-                    </h2>
-
-
-                    <p className="text-3xl mt-3">
-
-                        {emptyRooms}
-
-                    </p>
-
-
-                </div>
-
-
-
-
-
-
-
-
-                <div className="border rounded p-5 shadow">
-
-                    <h2 className="font-bold text-xl">
-
-                        Người thuê
-
-                    </h2>
-
-
-                    <p className="text-3xl mt-3">
-
-                        {tenants.length}
-
-                    </p>
-
-
-                </div>
-
-
+                <Card
+                    title="Người thuê"
+                    value={totalTenants}
+                />
 
 
 
@@ -365,51 +423,31 @@ export default function DashboardPage(){
             <div className="grid grid-cols-4 gap-5 mt-5">
 
 
+                <Card
+                    title="Hợp đồng"
+                    value={totalContracts}
+                />
 
 
-
-                <div className="border rounded p-5 shadow">
-
-                    <h2 className="font-bold text-xl">
-
-                        Hợp đồng
-
-                    </h2>
+                <Card
+                    title="Hóa đơn"
+                    value={totalBills}
+                />
 
 
-                    <p className="text-3xl mt-3">
-
-                        {contracts.length}
-
-                    </p>
-
-
-                </div>
+                <Card
+                    title="Đã thanh toán"
+                    value={paidBills}
+                />
 
 
+                <Card
+                    title="Chưa thanh toán"
+                    value={unpaidBills}
+                />
 
 
-
-
-
-
-                <div className="border rounded p-5 shadow">
-
-                    <h2 className="font-bold text-xl">
-
-                        Hóa đơn
-
-                    </h2>
-
-
-                    <p className="text-3xl mt-3">
-
-                        {bills.length}
-
-                    </p>
-
-
-                </div>
+            </div>
 
 
 
@@ -418,32 +456,13 @@ export default function DashboardPage(){
 
 
 
-                <div className="border rounded p-5 shadow">
 
-                    <h2 className="font-bold text-xl">
-
-                        Đã thanh toán
-
-                    </h2>
-
-
-                    <p className="text-3xl mt-3">
-
-                        {paidBills}
-
-                    </p>
-
-
-                </div>
+            <div className="grid grid-cols-2 gap-5 mt-5">
 
 
 
+                <div className="border rounded-lg p-5 shadow bg-white">
 
-
-
-
-
-                <div className="border rounded p-5 shadow">
 
                     <h2 className="font-bold text-xl">
 
@@ -452,10 +471,11 @@ export default function DashboardPage(){
                     </h2>
 
 
-                    <p className="text-3xl mt-3">
+
+                    <p className="text-4xl font-bold mt-3 text-blue-600">
 
 
-                        {totalRevenue.toLocaleString()}
+                        {moneyFormat(totalRevenue)}
 
                         {" "}VNĐ
 
@@ -469,10 +489,211 @@ export default function DashboardPage(){
 
 
 
+
+
+                <div className="border rounded-lg p-5 shadow bg-white">
+
+
+                    <h2 className="font-bold text-xl">
+
+                        Tỷ lệ lấp đầy
+
+                    </h2>
+
+
+
+                    <p className="text-4xl font-bold mt-3 text-blue-600">
+
+                        {roomPercent}%
+
+                    </p>
+
+
+
+                    <p className="text-gray-600 mt-2">
+
+                        {rentedRooms}/{totalRooms} phòng
+
+                    </p>
+
+
+                </div>
+
+
+
             </div>
 
 
 
+
+
+
+
+
+
+            <div className="mt-8">
+
+
+                <h2 className="text-2xl font-bold mb-4">
+
+                    Hóa đơn gần đây
+
+                </h2>
+
+
+
+
+
+
+                <table className="w-full border">
+
+
+                    <thead>
+
+                        <tr className="bg-gray-100">
+
+
+                            <th className="border p-3">
+
+                                Phòng
+
+                            </th>
+
+
+                            <th className="border p-3">
+
+                                Người thuê
+
+                            </th>
+
+
+                            <th className="border p-3">
+
+                                Số tiền
+
+                            </th>
+
+
+                            <th className="border p-3">
+
+                                Trạng thái
+
+                            </th>
+
+
+                        </tr>
+
+                    </thead>
+
+
+
+
+
+                    <tbody>
+
+
+                    {
+
+                        recentBills.map(bill=>(
+
+
+                            <tr key={bill.billID}>
+
+
+                                <td className="border p-3">
+
+                                    {bill.roomName}
+
+                                </td>
+
+
+
+                                <td className="border p-3">
+
+                                    {bill.tenantName}
+
+                                </td>
+
+
+
+                                <td className="border p-3">
+
+                                    {moneyFormat(
+                                        bill.totalAmount
+                                    )}
+
+                                    {" "}VNĐ
+
+                                </td>
+
+
+
+                                <td className="border p-3">
+
+                                    {bill.status}
+
+                                </td>
+
+
+
+                            </tr>
+
+
+                        ))
+
+                    }
+
+
+                    </tbody>
+
+
+                </table>
+
+
+
+            </div>
+
+
+
+
+
+        </div>
+
+
+    );
+
+
+}
+
+
+
+
+
+
+
+
+function Card({title,value}){
+
+
+    return(
+
+
+        <div className="border rounded-lg p-5 shadow bg-white hover:shadow-lg transition">
+
+
+            <h2 className="font-bold text-xl text-gray-700">
+
+                {title}
+
+            </h2>
+
+
+
+            <p className="text-4xl font-bold mt-3 text-blue-600">
+
+                {value}
+
+            </p>
 
 
         </div>

@@ -6,20 +6,13 @@ import { useEffect, useState } from "react";
 export default function BillsPage(){
 
 
-    const [bills,setBills] = useState([]);
+    const API = "https://localhost:7218/api/Bills";
 
-    const [contracts,setContracts] = useState([]);
-
-    const [showForm,setShowForm] = useState(false);
-
-
-    // ID hóa đơn đang sửa
-    const [editID,setEditID] = useState(null);
+    const CONTRACT_API = "https://localhost:7218/api/Contracts";
 
 
 
-
-    const [bill,setBill] = useState({
+    const emptyBill = {
 
         contractID:"",
 
@@ -37,9 +30,29 @@ export default function BillsPage(){
 
         status:"Chưa thanh toán"
 
-    });
+    };
 
 
+
+
+
+    const [bills,setBills] = useState([]);
+
+
+    const [contracts,setContracts] = useState([]);
+
+
+    const [bill,setBill] = useState(emptyBill);
+
+
+
+    const [showForm,setShowForm] = useState(false);
+
+
+    const [editID,setEditID] = useState(null);
+
+
+    const [loading,setLoading] = useState(true);
 
 
 
@@ -50,17 +63,30 @@ export default function BillsPage(){
     const getBills = async()=>{
 
 
-        const response = await fetch(
-
-            "https://localhost:7218/api/Bills"
-
-        );
+        try{
 
 
-        const data = await response.json();
+            const response = await fetch(API);
 
 
-        setBills(data);
+            const data = await response.json();
+
+
+            setBills(data);
+
+
+        }
+
+        catch(error){
+
+
+            console.log(error);
+
+
+            alert("Không thể tải hóa đơn");
+
+
+        }
 
 
     };
@@ -71,22 +97,33 @@ export default function BillsPage(){
 
 
 
-
-
     const getContracts = async()=>{
 
 
-        const response = await fetch(
-
-            "https://localhost:7218/api/Contracts"
-
-        );
+        try{
 
 
-        const data = await response.json();
+            const response = await fetch(CONTRACT_API);
 
 
-        setContracts(data);
+            const data = await response.json();
+
+
+            setContracts(data);
+
+
+        }
+
+        catch(error){
+
+
+            console.log(error);
+
+
+            alert("Không thể tải hợp đồng");
+
+
+        }
 
 
     };
@@ -102,9 +139,26 @@ export default function BillsPage(){
     useEffect(()=>{
 
 
-        getBills();
+        const loadData = async()=>{
 
-        getContracts();
+
+            await Promise.all([
+
+                getBills(),
+
+                getContracts()
+
+            ]);
+
+
+            setLoading(false);
+
+
+        };
+
+
+
+        loadData();
 
 
     },[]);
@@ -139,15 +193,31 @@ export default function BillsPage(){
 
 
 
+    const resetForm = ()=>{
+
+
+        setBill(emptyBill);
+
+
+        setEditID(null);
+
+
+    };
+
+
+
+
+
+
 
 
 
     const saveBill = async()=>{
 
 
-        if(
-            bill.contractID === ""
-        ){
+        if(bill.contractID==="")
+
+        {
 
             alert("Vui lòng chọn hợp đồng");
 
@@ -156,6 +226,48 @@ export default function BillsPage(){
         }
 
 
+
+
+
+        if(
+
+            Number(bill.electricNew)
+
+            <
+
+            Number(bill.electricOld)
+
+        )
+
+        {
+
+            alert("Điện mới phải lớn hơn điện cũ");
+
+            return;
+
+        }
+
+
+
+
+
+        if(
+
+            Number(bill.waterNew)
+
+            <
+
+            Number(bill.waterOld)
+
+        )
+
+        {
+
+            alert("Nước mới phải lớn hơn nước cũ");
+
+            return;
+
+        }
 
 
 
@@ -190,7 +302,6 @@ export default function BillsPage(){
             status:bill.status
 
 
-
         };
 
 
@@ -205,18 +316,25 @@ export default function BillsPage(){
 
         ?
 
-        `https://localhost:7218/api/Bills/${editID}`
+        `${API}/${editID}`
 
         :
 
-        "https://localhost:7218/api/Bills";
+        API;
 
 
 
 
 
-        const method = editID ? "PUT" : "POST";
+        const method = editID
 
+        ?
+
+        "PUT"
+
+        :
+
+        "POST";
 
 
 
@@ -231,7 +349,7 @@ export default function BillsPage(){
 
             {
 
-                method:method,
+                method,
 
 
                 headers:{
@@ -242,7 +360,6 @@ export default function BillsPage(){
 
 
                 body:JSON.stringify(data)
-
 
             }
 
@@ -255,8 +372,8 @@ export default function BillsPage(){
 
 
 
-
         if(response.ok){
+
 
 
             alert(
@@ -275,42 +392,14 @@ export default function BillsPage(){
 
 
 
-
-
-
-
-            setBill({
-
-                contractID:"",
-
-                billMonth:"",
-
-                billYear:"",
-
-                electricOld:"",
-
-                electricNew:"",
-
-                waterOld:"",
-
-                waterNew:"",
-
-                status:"Chưa thanh toán"
-
-            });
-
-
-
-
-
-            setEditID(null);
+            resetForm();
 
 
             setShowForm(false);
 
 
-
             getBills();
+
 
 
         }
@@ -318,13 +407,16 @@ export default function BillsPage(){
         else{
 
 
-            const error = await response.text();
+            const error = await response.json();
 
 
-            console.log(error);
+            alert(
 
+                error.message ||
 
-            alert("Có lỗi xảy ra");
+                "Có lỗi xảy ra"
+
+            );
 
 
         }
@@ -341,29 +433,35 @@ export default function BillsPage(){
 
 
 
-
-
-
     const editBill = (item)=>{
 
 
         setBill({
 
+
             contractID:item.contractID,
+
 
             billMonth:item.billMonth,
 
+
             billYear:item.billYear,
+
 
             electricOld:item.electricOld,
 
+
             electricNew:item.electricNew,
+
 
             waterOld:item.waterOld,
 
+
             waterNew:item.waterNew,
 
+
             status:item.status
+
 
         });
 
@@ -385,10 +483,6 @@ export default function BillsPage(){
 
 
 
-
-
-
-
     const deleteBill = async(id)=>{
 
 
@@ -400,11 +494,9 @@ export default function BillsPage(){
 
 
 
+        const response = await fetch(
 
-
-        await fetch(
-
-            `https://localhost:7218/api/Bills/${id}`,
+            `${API}/${id}`,
 
             {
 
@@ -416,12 +508,45 @@ export default function BillsPage(){
 
 
 
-        getBills();
+
+
+        if(response.ok){
+
+
+            alert("Xóa hóa đơn thành công");
+
+
+            getBills();
+
+
+        }
 
 
     };
-    return(
 
+
+
+
+
+
+
+
+    if(loading){
+
+
+        return(
+
+            <div className="text-xl">
+
+                Đang tải dữ liệu...
+
+            </div>
+
+        );
+
+
+    }
+        return(
 
         <div>
 
@@ -446,14 +571,10 @@ export default function BillsPage(){
                 onClick={()=>{
 
 
-                    setShowForm(!showForm);
+                    resetForm();
 
 
-                    if(showForm){
-
-                        setEditID(null);
-
-                    }
+                    setShowForm(true);
 
 
                 }}
@@ -480,7 +601,10 @@ export default function BillsPage(){
 
 
             {
+
+
                 showForm &&
+
 
 
                 <div className="mt-5 border p-5 rounded">
@@ -490,7 +614,19 @@ export default function BillsPage(){
                     <h2 className="text-xl font-bold mb-4">
 
 
-                        {editID ? "Sửa hóa đơn" : "Thêm hóa đơn"}
+                        {
+
+                            editID
+
+                            ?
+
+                            "Sửa hóa đơn"
+
+                            :
+
+                            "Thêm hóa đơn"
+
+                        }
 
 
                     </h2>
@@ -518,7 +654,15 @@ export default function BillsPage(){
                     className="border p-2 block mb-3 w-full">
 
 
-                        <option value="">-- Chọn hợp đồng --</option>
+                        <option value="">
+
+
+                            -- Chọn hợp đồng --
+
+
+                        </option>
+
+
 
 
 
@@ -526,27 +670,51 @@ export default function BillsPage(){
 
                         {
 
+
                             contracts.map(contract=>(
 
 
                                 <option
 
+
                                 key={contract.contractID}
+
 
                                 value={contract.contractID}>
 
 
-                                    {contract.roomName}
+                                    {
 
-                                    {" - "}
 
-                                    {contract.tenantName}
+                                    contract.roomName
+
+                                    ||
+
+                                    `Hợp đồng ${contract.contractID}`
+
+
+                                    }
+
+
+
+                                    {
+
+
+                                    contract.tenantName
+
+                                    &&
+
+                                    ` - ${contract.tenantName}`
+
+
+                                    }
 
 
                                 </option>
 
 
                             ))
+
 
                         }
 
@@ -564,15 +732,21 @@ export default function BillsPage(){
 
                     <input
 
+
                     name="billMonth"
+
 
                     value={bill.billMonth}
 
+
                     onChange={handleChange}
+
 
                     placeholder="Tháng"
 
+
                     className="border p-2 block mb-3 w-full"
+
 
                     />
 
@@ -585,16 +759,22 @@ export default function BillsPage(){
 
 
                     <input
+
 
                     name="billYear"
 
+
                     value={bill.billYear}
 
+
                     onChange={handleChange}
+
 
                     placeholder="Năm"
 
+
                     className="border p-2 block mb-3 w-full"
+
 
                     />
 
@@ -607,16 +787,22 @@ export default function BillsPage(){
 
 
                     <input
+
 
                     name="electricOld"
 
+
                     value={bill.electricOld}
 
+
                     onChange={handleChange}
+
 
                     placeholder="Điện cũ"
 
+
                     className="border p-2 block mb-3 w-full"
+
 
                     />
 
@@ -629,16 +815,22 @@ export default function BillsPage(){
 
 
                     <input
+
 
                     name="electricNew"
 
+
                     value={bill.electricNew}
 
+
                     onChange={handleChange}
+
 
                     placeholder="Điện mới"
 
+
                     className="border p-2 block mb-3 w-full"
+
 
                     />
 
@@ -651,16 +843,22 @@ export default function BillsPage(){
 
 
                     <input
+
 
                     name="waterOld"
 
+
                     value={bill.waterOld}
+
 
                     onChange={handleChange}
 
+
                     placeholder="Nước cũ"
 
+
                     className="border p-2 block mb-3 w-full"
+
 
                     />
 
@@ -674,15 +872,21 @@ export default function BillsPage(){
 
                     <input
 
+
                     name="waterNew"
+
 
                     value={bill.waterNew}
 
+
                     onChange={handleChange}
+
 
                     placeholder="Nước mới"
 
+
                     className="border p-2 block mb-3 w-full"
+
 
                     />
 
@@ -709,18 +913,27 @@ export default function BillsPage(){
                     className="border p-2 block mb-3 w-full">
 
 
+
                         <option value="Chưa thanh toán">
+
 
                             Chưa thanh toán
 
+
                         </option>
+
+
+
 
 
                         <option value="Đã thanh toán">
 
+
                             Đã thanh toán
 
+
                         </option>
+
 
 
                     </select>
@@ -733,36 +946,87 @@ export default function BillsPage(){
 
 
 
-                    <button
+                    <div className="flex gap-3">
 
 
-                    onClick={saveBill}
+
+                        <button
 
 
-                    className="bg-green-600 text-white px-4 py-2 rounded">
+                        onClick={saveBill}
 
 
-                        {editID ? "Cập nhật hóa đơn" : "Lưu hóa đơn"}
+                        className="bg-green-600 text-white px-4 py-2 rounded">
 
 
-                    </button>
+
+                            {
+
+                            editID
+
+                            ?
+
+                            "Cập nhật hóa đơn"
+
+                            :
+
+                            "Lưu hóa đơn"
+
+                            }
+
+
+
+                        </button>
+
+
+
+
+
+
+
+
+
+                        <button
+
+
+                        onClick={()=>{
+
+
+                            resetForm();
+
+
+                            setShowForm(false);
+
+
+                        }}
+
+
+                        className="bg-gray-500 text-white px-4 py-2 rounded">
+
+
+
+                            Hủy
+
+
+
+                        </button>
+
+
+
+
+                    </div>
+
+
+
 
 
 
                 </div>
 
 
+
             }
-
-
-
-
-
-
-
-
-
-            <div className="mt-6">
+                        <div className="mt-6">
 
 
 
@@ -776,13 +1040,11 @@ export default function BillsPage(){
                         <tr className="bg-gray-100">
 
 
-
                             <th className="border p-3">
 
                                 ID
 
                             </th>
-
 
 
 
@@ -794,15 +1056,11 @@ export default function BillsPage(){
 
 
 
-
-
                             <th className="border p-3">
 
                                 Người thuê
 
                             </th>
-
-
 
 
 
@@ -814,15 +1072,11 @@ export default function BillsPage(){
 
 
 
-
-
                             <th className="border p-3">
 
                                 Điện
 
                             </th>
-
-
 
 
 
@@ -834,8 +1088,6 @@ export default function BillsPage(){
 
 
 
-
-
                             <th className="border p-3">
 
                                 Tổng tiền
@@ -844,15 +1096,11 @@ export default function BillsPage(){
 
 
 
-
-
                             <th className="border p-3">
 
                                 Trạng thái
 
                             </th>
-
-
 
 
 
@@ -892,10 +1140,11 @@ export default function BillsPage(){
 
                                 <td className="border p-3">
 
+
                                     {item.billID}
 
-                                </td>
 
+                                </td>
 
 
 
@@ -927,7 +1176,6 @@ export default function BillsPage(){
 
 
 
-
                                 <td className="border p-3">
 
 
@@ -942,15 +1190,17 @@ export default function BillsPage(){
 
 
 
-
                                 <td className="border p-3">
 
 
-                                    {item.billMonth}/{item.billYear}
+                                    {item.billMonth}
+
+                                    /
+
+                                    {item.billYear}
 
 
                                 </td>
-
 
 
 
@@ -963,7 +1213,9 @@ export default function BillsPage(){
 
                                     {item.electricOld}
 
+
                                     {" → "}
+
 
                                     {item.electricNew}
 
@@ -976,7 +1228,9 @@ export default function BillsPage(){
 
                                     {" "}
 
+
                                     {item.electricUsed}
+
 
                                     kWh
 
@@ -989,13 +1243,14 @@ export default function BillsPage(){
 
 
 
-
                                 <td className="border p-3">
 
 
                                     {item.waterOld}
 
+
                                     {" → "}
+
 
                                     {item.waterNew}
 
@@ -1008,7 +1263,9 @@ export default function BillsPage(){
 
                                     {" "}
 
+
                                     {item.waterUsed}
+
 
                                     m³
 
@@ -1021,17 +1278,30 @@ export default function BillsPage(){
 
 
 
-
                                 <td className="border p-3">
 
 
-                                    {item.totalAmount?.toLocaleString()}
+                                    {
+
+
+                                    item.totalAmount
+
+                                    ?
+
+                                    item.totalAmount.toLocaleString()
+
+                                    :
+
+                                    0
+
+
+                                    }
+
 
                                     {" "}VNĐ
 
 
                                 </td>
-
 
 
 
@@ -1053,8 +1323,8 @@ export default function BillsPage(){
 
 
 
-
                                 <td className="border p-3">
+
 
 
                                     <button
@@ -1066,10 +1336,13 @@ export default function BillsPage(){
                                     className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">
 
 
+
                                         Sửa
 
 
+
                                     </button>
+
 
 
 
@@ -1087,7 +1360,9 @@ export default function BillsPage(){
                                     className="bg-red-600 text-white px-3 py-1 rounded">
 
 
+
                                         Xóa
+
 
 
                                     </button>
@@ -1106,6 +1381,7 @@ export default function BillsPage(){
 
 
                         ))
+
 
                     }
 
